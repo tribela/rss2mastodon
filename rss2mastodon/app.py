@@ -3,7 +3,6 @@ import hashlib
 import json
 import os
 import sys
-import time
 
 import feedparser
 import mastodon
@@ -36,8 +35,6 @@ def post_feed(config: Config):
         api_base_url=config.host,
         access_token=config.token,
     )
-    me = client.me()
-    print(f'Logged in as {me["username"]}')
 
     feed = feedparser.parse(config.feed_url)
 
@@ -78,6 +75,14 @@ def main():
         return 1
 
     print(f'There are {len(configs)} configs.')
+
+    for i, config in enumerate(configs):
+        client = mastodon.Mastodon(
+            api_base_url=config.host,
+            access_token=config.token,
+        )
+        me = client.me()
+        print(f'Account {i}: {me["acct"]}')
 
     scheduler = BlockingScheduler()
     for config in configs:
