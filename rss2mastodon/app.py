@@ -6,11 +6,12 @@ import sys
 
 import feedparser
 import mastodon
+import jinja2
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 
-Config = collections.namedtuple('Config', ['host', 'token', 'feed_url'])
+Config = collections.namedtuple('Config', ['host', 'token', 'feed_url', 'msg_format'])
 
 
 def savefile_name(config):
@@ -37,6 +38,7 @@ def post_feed(config: Config):
     )
 
     feed = feedparser.parse(config.feed_url)
+    template = jinja2.Template(config.msg_format)
 
     for entry in reversed(feed.entries):
         if entry.id in processed:
@@ -44,7 +46,7 @@ def post_feed(config: Config):
 
         try:
             print(f'Post: {entry.title}')
-            msg = f'{entry.title}\n{entry.summary}\n\n{entry.link}'
+            msg = template.render(**entry)
             client.status_post(status=msg, language='ko')
         except Exception as e:
             print(e)
@@ -60,14 +62,19 @@ def post_feed(config: Config):
 def main():
     configs: list[Config] = []
     num = 0
+
+    default_host = os.environ.get('HOST')
+    default_format = os.environ.get('FORMAT', '{{title}}\n{{summary}}\n\n{{link}}')
+
     while True:
         try:
-            host = os.environ[f'HOST{num}']
+            host = os.environ.get(f'HOST{num}', default_host)
             token = os.environ[f'TOKEN{num}']
             feed_url = os.environ[f'FEED_URL{num}']
+            msg_format = os.environ.get(f'FORMAT{num}', default_format)
         except KeyError:
             break
-        configs.append(Config(host, token, feed_url))
+        configs.append(Config(host, token, feed_url, msg_format))
         num += 1
 
     if not configs:
