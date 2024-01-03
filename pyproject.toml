@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "rss2mastodon"
+version = "0.1.0"
+description = ""
+authors = ["Jeong Arm <kjwonmail@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+feedparser = "^6.0.11"
+mastodon-py = "^1.8.1"
+apscheduler = "^3.10.4"
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.1.0"
+flake8-import-order = "^0.18.2"
+pyright = "^1.1.344"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+rss2mastodon = "rss2mastodon.app:main"
