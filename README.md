@@ -8,10 +8,10 @@ It supports multiple accounts
 
 ```env
 # Default host (Optional)
-HOST=https://default.tld
+MASTODON_HOST=https://default.tld
 
 # Default message format (Optional)
-FORMAT={{title}}\n{{summary}}\n\n{{link}}
+MSG_FORMAT={{title}}\n{{summary}}\n\n{{link}}
 
 HOST0=https://mastodon.tld
 TOKEN0=someaccesstoken

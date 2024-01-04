@@ -65,8 +65,8 @@ def main():
     configs: list[Config] = []
     num = 0
 
-    default_host = os.environ.get('HOST')
-    default_format = os.environ.get('FORMAT', '{{title}}\n{{summary}}\n\n{{link}}')
+    default_host = os.environ.get('MASTODON_HOST')
+    default_format = os.environ.get('MSG_FORMAT', '{{title}}\n{{summary}}\n\n{{link}}')
 
     while True:
         try:
