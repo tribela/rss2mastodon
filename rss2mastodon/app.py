@@ -12,6 +12,9 @@ import mastodon
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 
+MAX_RECENT_ENTRIES = 200
+
+
 Config = collections.namedtuple('Config', ['host', 'token', 'feed_url', 'msg_format'])
 
 
@@ -55,7 +58,7 @@ def post_feed(config: Config):
         else:
             processed.append(entry.id)
 
-    processed = processed[-len(feed.entries):]
+    processed = processed[-MAX_RECENT_ENTRIES:]
 
     with open(savefile, 'w') as f:
         f.write(json.dumps(processed))
