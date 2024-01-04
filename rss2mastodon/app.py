@@ -74,6 +74,7 @@ def main():
             token = os.environ[f'TOKEN{num}']
             feed_url = os.environ[f'FEED_URL{num}']
             msg_format = os.environ.get(f'FORMAT{num}', default_format)
+            msg_format = msg_format.replace(r'\n', '\n')
         except KeyError:
             break
         configs.append(Config(host, token, feed_url, msg_format))
