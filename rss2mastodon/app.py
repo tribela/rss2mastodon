@@ -50,7 +50,8 @@ def post_feed(config: Config):
 
         try:
             print(f'Post: {entry.title}')
-            entry.summary = html.unescape(entry.summary)
+            # XXX: Note that updating entry.summary is not affecting entry['summary']
+            entry['summary'] = html.unescape(entry.summary)
             msg = template.render(**entry)
             client.status_post(status=msg, language='ko')
         except Exception as e:
