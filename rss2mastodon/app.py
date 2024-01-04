@@ -1,12 +1,13 @@
 import collections
 import hashlib
+import html
 import json
 import os
 import sys
 
 import feedparser
-import mastodon
 import jinja2
+import mastodon
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -46,6 +47,7 @@ def post_feed(config: Config):
 
         try:
             print(f'Post: {entry.title}')
+            entry.summary = html.unescape(entry.summary)
             msg = template.render(**entry)
             client.status_post(status=msg, language='ko')
         except Exception as e:
