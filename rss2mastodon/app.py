@@ -116,7 +116,7 @@ def main():
             post_feed,
             'interval',
             args=[name, config],
-            seconds=60,
+            minutes=5,
         )
 
     for job in scheduler.get_jobs():
