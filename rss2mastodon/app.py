@@ -4,12 +4,12 @@ import html
 import json
 import os
 import sys
+import time
 
 import feedparser
 import jinja2
 import mastodon
-
-from apscheduler.schedulers.blocking import BlockingScheduler
+import schedule
 
 from rss2mastodon.sed import SedRule, apply_sed_rules, parse_sed_expressions
 
@@ -102,7 +102,6 @@ def main():
 
     print(f'There are {len(configs)} configs.')
 
-    scheduler = BlockingScheduler()
     for i, config in enumerate(configs):
         client = mastodon.Mastodon(
             api_base_url=config.host,
@@ -112,16 +111,11 @@ def main():
         name = me['acct']
         print(f'Account {i}: {name}')
 
-        scheduler.add_job(
-            post_feed,
-            'interval',
-            args=[name, config],
-            minutes=5,
-        )
+        schedule.every(5).minutes.do(post_feed, name=name, config=config)
 
-    for job in scheduler.get_jobs():
-        job.func(*job.args)
-    scheduler.start()
+    while True:
+        schedule.run_pending()
+        time.sleep(schedule.idle_seconds())
 
 
 if __name__ == '__main__':
