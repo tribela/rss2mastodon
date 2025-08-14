@@ -13,6 +13,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 
 MAX_RECENT_ENTRIES = 200
+MAX_POST_AT_ONCE = 3
 
 
 Config = collections.namedtuple('Config', ['host', 'token', 'feed_url', 'msg_format'])
@@ -44,6 +45,7 @@ def post_feed(config: Config):
     feed = feedparser.parse(config.feed_url)
     template = jinja2.Template(config.msg_format)
 
+    count = 0
     for entry in reversed(feed.entries):
         if entry.id in processed:
             continue
@@ -58,6 +60,10 @@ def post_feed(config: Config):
             print(e)
         else:
             processed.append(entry.id)
+            count += 1
+
+        if count >= MAX_POST_AT_ONCE:
+            break
 
     processed = processed[-MAX_RECENT_ENTRIES:]
 
