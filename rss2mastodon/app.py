@@ -71,6 +71,7 @@ def main():
 
     default_host = os.environ.get('MASTODON_HOST')
     default_format = os.environ.get('MSG_FORMAT', '{{title}}\n{{summary}}\n\n{{link}}')
+    default_block_regex = os.environ.get('BLOCK_REGEX')
 
     while True:
         try:
