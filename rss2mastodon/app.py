@@ -28,7 +28,7 @@ def savefile_path(name: str) -> str:
     return os.path.join('saved', name)
 
 
-def post_feed(config: Config):
+def post_feed(name: str, config: Config):
     savefile = savefile_path(savefile_name(config))
 
     try:
@@ -51,7 +51,7 @@ def post_feed(config: Config):
             continue
 
         try:
-            print(f'Post: {entry.title}')
+            print(f'{name} Post: {entry.title}')
             # XXX: Note that updating entry.summary is not affecting entry['summary']
             entry['summary'] = html.unescape(entry.summary)
             msg = template.render(**entry)
@@ -97,20 +97,20 @@ def main():
 
     print(f'There are {len(configs)} configs.')
 
+    scheduler = BlockingScheduler()
     for i, config in enumerate(configs):
         client = mastodon.Mastodon(
             api_base_url=config.host,
             access_token=config.token,
         )
         me = client.me()
-        print(f'Account {i}: {me["acct"]}')
+        name = me['acct']
+        print(f'Account {i}: {name}')
 
-    scheduler = BlockingScheduler()
-    for config in configs:
         scheduler.add_job(
             post_feed,
             'interval',
-            args=[config],
+            args=[name, config],
             seconds=60,
         )
 
