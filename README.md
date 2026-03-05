@@ -22,4 +22,12 @@ HOST1=https://mastodon.tld
 TOKEN1=anotheraccesstoken
 FEED_URL1=https://rss.tld/anotherfeed.xml
 FORMAT1={{title}}\n{{link}}\n#cats
+
+# Default sed-style replacement (Optional)
+# Multiple rules separated by semicolons
+# Flags: g (global), i (case-insensitive), m (multiline), s (dotall)
+SED=s/foo/bar/g;s/baz/qux/
+
+# Per-account sed override (Optional, falls back to SED)
+SED0=s/hello/world/
 ```

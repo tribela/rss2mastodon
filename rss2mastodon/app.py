@@ -11,12 +11,14 @@ import mastodon
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from rss2mastodon.sed import SedRule, apply_sed_rules, parse_sed_expressions
+
 
 MAX_RECENT_ENTRIES = 200
 MAX_POST_AT_ONCE = 3
 
 
-Config = collections.namedtuple('Config', ['host', 'token', 'feed_url', 'msg_format'])
+Config = collections.namedtuple('Config', ['host', 'token', 'feed_url', 'msg_format', 'sed_rules'])
 
 
 def savefile_name(config):
@@ -55,6 +57,7 @@ def post_feed(name: str, config: Config):
             # XXX: Note that updating entry.summary is not affecting entry['summary']
             entry['summary'] = html.unescape(entry.summary)
             msg = template.render(**entry)
+            msg = apply_sed_rules(msg, config.sed_rules)
             client.status_post(status=msg, language='ko')
         except Exception as e:
             print(e)
@@ -77,7 +80,7 @@ def main():
 
     default_host = os.environ.get('MASTODON_HOST')
     default_format = os.environ.get('MSG_FORMAT', '{{title}}\n{{summary}}\n\n{{link}}')
-    default_block_regex = os.environ.get('BLOCK_REGEX')
+    default_sed = os.environ.get('SED', '')
 
     while True:
         try:
@@ -86,9 +89,11 @@ def main():
             feed_url = os.environ[f'FEED_URL{num}']
             msg_format = os.environ.get(f'FORMAT{num}', default_format)
             msg_format = msg_format.replace(r'\n', '\n')
+            sed_expr = os.environ.get(f'SED{num}', default_sed)
+            sed_rules: list[SedRule] = parse_sed_expressions(sed_expr) if sed_expr else []
         except KeyError:
             break
-        configs.append(Config(host, token, feed_url, msg_format))
+        configs.append(Config(host, token, feed_url, msg_format, sed_rules))
         num += 1
 
     if not configs:
