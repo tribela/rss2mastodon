@@ -16,6 +16,7 @@ from rss2mastodon.sed import SedRule, apply_sed_rules, parse_sed_expressions
 
 MAX_RECENT_ENTRIES = 200
 MAX_POST_AT_ONCE = 3
+POST_TIMEOUT_S = 240
 
 
 Config = collections.namedtuple('Config', ['host', 'token', 'feed_url', 'msg_format', 'sed_rules'])
@@ -46,11 +47,16 @@ def post_feed(name: str, config: Config):
 
     feed = feedparser.parse(config.feed_url)
     template = jinja2.Template(config.msg_format)
+    deadline = time.time() + POST_TIMEOUT_S
 
     count = 0
     for entry in reversed(feed.entries):
         if entry.id in processed:
             continue
+
+        if time.time() > deadline:
+            print(f'Timeout ({POST_TIMEOUT_S}s) reached for {config.feed_url}, saving progress')
+            break
 
         try:
             print(f'{name} Post: {entry.title}')
