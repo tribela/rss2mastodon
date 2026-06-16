@@ -121,7 +121,7 @@ def main():
 
     while True:
         schedule.run_pending()
-        time.sleep(schedule.idle_seconds())
+        time.sleep(max(schedule.idle_seconds(), 0))
 
 
 if __name__ == '__main__':
