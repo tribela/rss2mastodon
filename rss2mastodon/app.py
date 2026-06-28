@@ -3,20 +3,25 @@ import hashlib
 import html
 import json
 import os
+import socket
 import sys
 import time
+import urllib.error
+import urllib.request
 
 import feedparser
 import jinja2
 import mastodon
 import schedule
 
-from rss2mastodon.sed import SedRule, apply_sed_rules, parse_sed_expressions
+from rss2mastodon.sed import apply_sed_rules, parse_sed_expressions, SedRule
 
 
 MAX_RECENT_ENTRIES = 200
 MAX_POST_AT_ONCE = 3
 POST_TIMEOUT_S = 240
+FEED_FETCH_TIMEOUT_S = 30
+MASTODON_TIMEOUT_S = 120
 
 
 Config = collections.namedtuple('Config', ['host', 'token', 'feed_url', 'msg_format', 'sed_rules'])
@@ -31,6 +36,18 @@ def savefile_path(name: str) -> str:
     return os.path.join('saved', name)
 
 
+def fetch_feed(url: str, timeout: int = FEED_FETCH_TIMEOUT_S) -> bytes:
+    """Download RSS feed content with explicit timeout.
+
+    feedparser.parse() does not accept a timeout parameter and uses
+    urllib with the default (infinite) socket timeout, which can cause
+    the program to hang indefinitely if the RSS server stops responding.
+    """
+    req = urllib.request.Request(url, headers={'User-Agent': 'rss2mastodon/1.0'})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read()
+
+
 def post_feed(name: str, config: Config):
     savefile = savefile_path(savefile_name(config))
 
@@ -43,9 +60,18 @@ def post_feed(name: str, config: Config):
     client = mastodon.Mastodon(
         api_base_url=config.host,
         access_token=config.token,
+        request_timeout=MASTODON_TIMEOUT_S,
     )
 
-    feed = feedparser.parse(config.feed_url)
+    # Fetch feed with timeout before parsing — feedparser.parse() has no
+    # timeout parameter and can hang forever on unresponsive servers.
+    try:
+        feed_data = fetch_feed(config.feed_url)
+    except (urllib.error.URLError, socket.timeout, OSError) as e:
+        print(f'{name}: Feed fetch failed ({config.feed_url}): {e}')
+        return
+
+    feed = feedparser.parse(feed_data)
     template = jinja2.Template(config.msg_format)
     deadline = time.time() + POST_TIMEOUT_S
 
@@ -120,8 +146,14 @@ def main():
         schedule.every(5).minutes.do(post_feed, name=name, config=config)
 
     while True:
-        schedule.run_pending()
-        time.sleep(max(schedule.idle_seconds(), 0))
+        try:
+            schedule.run_pending()
+        except Exception as e:
+            print(f'Unhandled error in scheduled job: {e}')
+            # Continue the loop — one failed job must not stop all feeds.
+
+        idle = schedule.idle_seconds()
+        time.sleep(max(idle if idle is not None else 0, 0))
 
 
 if __name__ == '__main__':
